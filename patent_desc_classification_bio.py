@@ -3,7 +3,7 @@ import openai
 
 api_key = os.environ.get('OPENAI_API_KEY')
 openai.api_key = api_key
-https://github.com/AndrewWooo/LLM_AI_Mavericks.git
+
 
 def classify_patient_description(patient_description, age, gender, medical_records):
     # Define the categories
