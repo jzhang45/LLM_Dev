@@ -1,11 +1,36 @@
 import os
 import json
 import openai
-import concurrent.futures
+from fuzzywuzzy import fuzz
 
 class DoctorCategoryAssistant:
-    def __init__(self, categories):
-        self.categories = categories
+    def __init__(self):
+
+        self.categories = [
+            "General Practitioner",
+            "Cardiologist",
+            "Dermatologist",
+            "Pediatrics",
+            "Neurologist",
+            "Orthopedic Surgeon",
+            "Radiologist",
+            "Gastroenterologist",
+            "Oncologist",
+            'Pulmonologist'
+        ]
+
+        self.category_mapping = {
+            "general practitioner": "General Practice or Family Medicine",
+            "cardiologist": "Cardiology",
+            "dermatologist": "Dermatology",
+            "pediatrician": "Pediatrics",
+            "neurologist": "Neurology",
+            "orthopedic surgeon": "Orthopedics",
+            "radiologist": "Radiology",
+            "gastroenterologist": "Gastroenterology",
+            "oncologist": "Oncology",
+            'Pulmonologist': 'Pulmonology'
+        }
         system_message = """
         You are a medical AI assistant. Your role is to suggest the appropriate type of doctor for the patient to see based on their details and symptoms.
         When diagnosing, remember to think step by step, first gathering the patient's symptoms, considering potential causes, asking follow-up questions if necessary, and only then making your suggestion. 
@@ -17,7 +42,6 @@ class DoctorCategoryAssistant:
         }]
 
         self.logic = """
-
         - Please provide the following physical information to navigate to the appropriate doctor category:
           - Ask for patient's age.
           - Ask for patient's gender (Male/Female/Other).
@@ -66,27 +90,18 @@ class DoctorCategoryAssistant:
                                     - Direct the patient to a General Practitioner.
         """
     def predict_category(self, user_input):
+        max_ratio = -1
         predicted_category = self.categories[-1]  # Default category
-        for category in self.categories:
-            if category.lower() in user_input.lower():
+        for keyword, category in self.category_mapping.items():
+            ratio = fuzz.token_set_ratio(keyword, user_input.lower())
+            if ratio > max_ratio:
+                max_ratio = ratio
                 predicted_category = category
-                break
-        return predicted_category
+        return predicted_category if max_ratio > 70 else "Unknown"
 
-categories = [
-    "General Practitioner",
-    "Cardiologist",
-    "Dermatologist",
-    "Pediatrics",
-    "Neurologist",
-    "Orthopedic Surgeon",
-    "Radiologist",
-    "Gastroenterologist",
-    "Oncologist"
-]
 
 # Create an instance of the DoctorCategoryAssistant class
-assistant = DoctorCategoryAssistant(categories)
+assistant = DoctorCategoryAssistant()
 
 script_dir = os.path.dirname(os.path.abspath(__name__))
 # Load patient information from a JSON file
@@ -117,7 +132,7 @@ assistant.messages.append({
     "content": patient_input
 })
 
-
+turns = 0
 # Loop until a category is found
 while True:
     # Generate a response from the model
@@ -140,11 +155,11 @@ while True:
     # Print the assistant's reply
     print("Assistant:", assistant_reply)
 
+
     # Extract the predicted category from the assistant's final reply
     predicted_category = assistant.predict_category(assistant_reply)
-
     # Break the loop if a category has been found
-    if predicted_category:
+    if predicted_category != "Unknown":
         break
 
     # Get additional patient input
@@ -160,6 +175,9 @@ while True:
         "role": "user",
         "content": patient_input
     })
+
+    # Increment the turn counter
+    turns += 1
 
 # Print the predicted category
 print("Predicted category:", predicted_category)
