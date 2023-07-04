@@ -36,27 +36,31 @@ age = patient_info['age']
 gender = patient_info['gender']
 medical_records = patient_info['medical_records']
 
-# Initialize conversation history
-conversation = [{'role': 'patient', 'message': initial_prompt}]
+# System message
+system_prompt = f"You are an AI medical assistant. Based on the patient's details and symptoms, suggest the appropriate type of doctor they should see.\n"
+system_prompt += f"Patient Details:\nDescription: {patient_description}\nAge: {age}\nGender: {gender}\n"
+
+for medical_record in medical_records:
+    system_prompt += f"Medical Record: {medical_record}\n"
+
+system_prompt += "\nConversation:"
 
 # Main loop
 while True:
+    # User input
+    patient_input = input("Patient: ")
+
     # Construct the conversation input
-    conversation_input = ""
-    for turn in conversation:
-        if turn['role'] == 'patient':
-            conversation_input += f"\nPatient: {turn['message']}"
-        else:
-            conversation_input += f"\nAssistant: {turn['message']}"
+    conversation_input = system_prompt + f"\nPatient: {patient_input}"
 
     # Generate a response from the model
     response = openai.Completion.create(
         engine='text-davinci-003',
         prompt=conversation_input,
-        max_tokens=50,
+        max_tokens=150,
         n=1,
-        stop=None,
-        temperature=0.7,
+        stop=["\n"],
+        temperature=0.6,
         top_p=1.0,
         frequency_penalty=0.0,
         presence_penalty=0.0
@@ -65,19 +69,15 @@ while True:
     # Extract the assistant's reply
     assistant_reply = response.choices[0].text.strip()
 
-    # Print and store the assistant's reply
+    # Print the assistant's reply
     print("Assistant:", assistant_reply)
-    conversation.append({'role': 'assistant', 'message': assistant_reply})
+
+    # Update system prompt
+    system_prompt += f"\nPatient: {patient_input}\nAssistant: {assistant_reply}"
 
     # Check if the task is complete
-    if "category" in assistant_reply:
+    if any(cat.lower() in assistant_reply.lower() for cat in categories):
         break
-
-    # Prompt the patient for the next input
-    patient_input = input("Patient: ")
-
-    # Store the patient's reply
-    conversation.append({'role': 'patient', 'message': patient_input})
 
 # Extract the predicted category from the assistant's final reply
 predicted_category = None
@@ -88,9 +88,6 @@ for cat in categories:
 
 # Print the predicted category
 print("Predicted category:", predicted_category)
-
-
-
 
 
 
