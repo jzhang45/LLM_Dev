@@ -6,11 +6,18 @@ import concurrent.futures
 class DoctorCategoryAssistant:
     def __init__(self, categories):
         self.categories = categories
+        system_message = """
+        You are a medical AI assistant. Your role is to suggest the appropriate type of doctor for the patient to see based on their details and symptoms.
+        When diagnosing, remember to think step by step, first gathering the patient's symptoms, considering potential causes, asking follow-up questions if necessary, and only then making your suggestion. 
+        Also, use simple, non-medical language that a layperson can understand.
+        """
         self.messages = [{
             "role": "system",
-            "content": "You are a medical AI assistant. Your role is to suggest the appropriate type of doctor for the patient to see based on their details and symptoms."
+            "content": system_message
         }]
+
         self.logic = """
+
         - Please provide the following physical information to navigate to the appropriate doctor category:
           - Ask for patient's age.
           - Ask for patient's gender (Male/Female/Other).
@@ -115,8 +122,8 @@ assistant.messages.append({
 while True:
     # Generate a response from the model
     response = openai.ChatCompletion.create(
-        # model='gpt-3.5-turbo-0613',
-        model="gpt-3.5-turbo-16k",
+        model='gpt-3.5-turbo-0613',
+        # model="gpt-3.5-turbo-16k",
         messages=assistant.messages,
         max_tokens=128,
         n=1,
